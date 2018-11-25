@@ -1,0 +1,77 @@
+﻿/* Creo Parametric relations for animating via regeneration loops
+/* by Darren Cokin  v1.0 November 2018   General Public License
+/*
+/* Replace <animated_parameter> with the parameter or dimension you would like
+/* to vary.  Replace <starting_value> with a parameter, or just enter a number.
+/* Replace <animation_increment> with a parameter, or just enter a non-zero
+/* number.
+/*
+/* Please create the following standard animation control parameters in the
+/* model, with indicated types:
+/*        animate_with_every_regen = yes no
+/*         animation_current_frame = integer
+/*            regenerations_needed = integer
+/*            regeneration_counter = integer
+/*                    dynamic_text = string
+/*
+/* If you would like your model to include a control panel, with flat to screen
+/* text overlaid on the model where parameters can be displayed and varied,
+/* you may also wish it to disappear when it's time to save an image.  Create
+/* as an annotation feature, and edit model's program (Tools / Model Intent /
+/* Program) to include this statement before the feature's "ADD FEATURE"
+/* statement:
+/*   if animate_with_every_regen == no | (animate_with_every_regen == yes & \
+/*     regeneration_counter != regenerations_needed)
+/* And also include an "endif" statement after the the feature's "END ADD"
+/* statement.
+/*
+/* Begin animation control algorithm:
+/* If animation is not active, reset animated parameter to starting value,
+/* reset frame count, reset regeneration count, and reset dynamic text.
+if animate_with_every_regen == no
+    <animated_parameter> = <starting_value>
+    animation_current_frame = 1
+    regeneration_counter = 1
+    dynamic_text = "SIMULATION IS NOT RUNNING"
+else
+    /* Check if this is the second to last regeneration cycle.  This is when the
+    /* model is fully regenerated, and we save the image for the animation
+    /* frame.
+    /* Increment regeneration count, and update dynamic text.
+    if regeneration_counter == regenerations_needed - 1
+        regeneration_counter = regeneration_counter + 1
+        dynamic_text = "SIMULATION FRAME " + itos(animation_current_frame) + \
+          + " READY.  REGENERATE " + itos(regenerations_needed) + \
+          "X TO CONTINUE AFTER SCREEN CAPTURED."
+    else
+        /* Check if this is the last regeneration cycle.  If so, increment
+        /* animated parameter, increment frame counter, reset regeneration
+        /* counter, and update dynamic text.
+        if regeneration_counter == regenerations_needed
+            regeneration_counter = 1
+            animation_current_frame = animation_current_frame + 1
+            <animated_parameter> = <animated_parameter> + <animation_increment>
+            
+            /* if user had only requested one regeneration cycle, it will go
+            /* to this part of loop every cycle.  Use alternate dynamic text
+            /* in that case.
+            if regenerations_needed == 1
+                dynamic_text = "SIMULATION FRAME " + \
+                  itos(animation_current_frame) + \
+                  " READY.  REGENERATE TO CONTINUE AFTER SCREEN CAPTURED."
+            else
+            /* update dynamic text for usual case with multiple regens
+                dynamic_text = "SIMULATION FRAME " + itos(\
+                  animation_current_frame) + " IN WORK.  REGENERATE " + \
+                  itos(regenerations_needed - 1) + "X MORE."
+            endif
+        else
+            /* When in any regen cycle that isn't the last or second to last,
+            /* just increment the regeneration counter and dynamic text.
+            regeneration_counter = regeneration_counter + 1
+            dynamic_text = "SIMULATION FRAME " + itos(\
+              animation_current_frame) + " IN WORK.  REGENERATE " + \
+              itos(regenerations_needed - regeneration_counter) + "X MORE."
+        endif
+    endif
+endif
